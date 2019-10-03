@@ -55,31 +55,48 @@ rhoMat_ML<-result$rho[1001:5000,]
 heatMat_ML<-heatMap(rhoMat_ML,rho0)
 
 ################using Pseudo Likelihood#####################
-n_samples<-500
-perturbMethod<-'V'
-start <- proc.time()
+n_samples<-4000
 tmpRank<-rank(apply(data,2,sum),ties.method='first')
 rhoMat<-matrix(data=NA, nrow = n_samples,ncol = n)
 
-for(sample_i in 1:n_samples){
-  print(sample_i)
-  support<-1:n
-  rho<-rep(NA,n)
-  In<-generateVOrderings(tmpRank)
-  for(i in 1:n){
-    i_curr<-which(In==i)
-    dist<-sapply(support, oneDimfootrule, Rs=data[,i_curr])
-    log_num<-(-alpha0/(n)*(dist))
-    log_denom<- log(sum(exp(log_num)))
-    probs<-exp((log_num-log_denom))
-    rand<-runif(1)
-    indOfCdf<-length(support)+1-sum(rand<=cdfForSamples(probs))
-    rho[i_curr]<-support[indOfCdf]
-    support<-setdiff(support,rho[i_curr])
+sds<-c(0.1,0.3,0.5,1,3,5,7,9)
+KLs<-vector()
+
+for(SdNorm in sds){
+  print(paste("SD = ",SdNorm))
+  orderings <- vector()
+  for(i in 1:n_samples){
+    orderings <- rbind(orderings,rank(rnorm(n, mean =generateVOrderings(tmpRank),sd = sdNorm)))
   }
-  rhoMat[sample_i,]<-rho
+  
+  for(sample_i in 1:n_samples){
+    if(sample_i %% 100 ==0){
+      print(sample_i)
+    }
+    support<-1:n
+    rho<-rep(NA,n)
+    #In<-generateVOrderings(tmpRank)
+    In<-orderings[sample_i,]
+    for(i in 1:n){
+      i_curr<-which(In==i)
+      dist<-sapply(support, oneDimfootrule, Rs=data[,i_curr])
+      log_num<-(-alpha0/(n)*(dist))
+      log_denom<- log(sum(exp(log_num)))
+      probs<-exp((log_num-log_denom))
+      rand<-runif(1)
+      indOfCdf<-length(support)+1-sum(rand<=cdfForSamples(probs))
+      rho[i_curr]<-support[indOfCdf]
+      support<-setdiff(support,rho[i_curr])
+    }
+    rhoMat[sample_i,]<-rho
+  }
+  heatMat_ML<-heatMap(rhoMat_ML,rho0)
+  heatMat_pseudo<-heatMap(rhoMat,rho0)
+  KL<-0
+  for(k in 1:n){
+    KL<-KL+KL_margin(heatMat_ML[1,],heatMat_pseudo[1,],margin=0.000001)
+  }
+  
+  KLs<-c(KLs,KL)
+
 }
-
-
-
-
