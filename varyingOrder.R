@@ -31,7 +31,7 @@ load("./Cdfootrule.RData")
 #################generate some data###################
 alpha0<-c(1.6)
 alpha0_orderings<-c(10)
-N<-50
+N<-100
 rho0<-1:n
 sourceCpp('MCMC_old.cpp')
 sds<-c(0.1,0.3,0.5,1,3,5,7,9,15,20)
