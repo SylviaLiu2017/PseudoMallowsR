@@ -29,13 +29,17 @@ source("./allFunctions.R")
 n<-20
 load("./Cdfootrule.RData")
 #################generate some data###################
-alpha0<-c(2)
+alpha0<-c(1.6)
 alpha0_orderings<-c(10)
-N<-200
+N<-50
 rho0<-1:n
 sourceCpp('MCMC_old.cpp')
-
-data<-sample_mallows(rho0 = rho0,alpha0 = alpha0, n_samples = N)
+sds<-c(0.1,0.3,0.5,1,3,5,7,9,15,20)
+resultTable<-matrix(data=NA, nrow = 1,ncol = length(sds)+2)
+colnames(resultTable)<-c("alpha data", "sd data", sds)
+for(alpha0 in c(0.5,0.7,1,1.2,1.4,1.5,1.7,2,3,4,5)){
+  KLs<-vector()
+  data<-sample_mallows(rho0 = rho0,alpha0 = alpha0, n_samples = N)
 ###############calculating Mallows posterior probability, ground truth####################
 Rtrue<-rho0
 nmc <- 500000 # Number of iterations of MCMC algorithm
@@ -59,11 +63,8 @@ n_samples<-4000
 tmpRank<-rank(apply(data,2,sum),ties.method='first')
 rhoMat<-matrix(data=NA, nrow = n_samples,ncol = n)
 
-sds<-c(0.1,0.3,0.5,1,3,5,7,9)
-KLs<-vector()
-
-for(SdNorm in sds){
-  print(paste("SD = ",SdNorm))
+for(sdNorm in sds){
+  print(paste("SD = ",sdNorm))
   orderings <- vector()
   for(i in 1:n_samples){
     orderings <- rbind(orderings,rank(rnorm(n, mean =generateVOrderings(tmpRank),sd = sdNorm)))
@@ -100,3 +101,40 @@ for(SdNorm in sds){
   KLs<-c(KLs,KL)
 
 }
+
+
+par(mai=c(1,1,0.65,1))
+letters <- c(1:n)
+image(heatMat_ML,col=tim.colors(64*10),zlim=c(0,1),axes=F,cex.lab=2,main = "Mallows")
+par(mai=c(1,1,0.65,1))
+image.plot(heatMat_ML, zlim=c(0,1),legend.only=T,horizontal = F)
+
+par(mai=c(1,1,0.65,1))
+letters <- c(1:n)
+image(heatMat_pseudo,col=tim.colors(64*10),zlim=c(0,1),axes=F,cex.lab=2,main = "Pseudo")
+par(mai=c(1,1,0.65,1))
+image.plot(heatMat_ML, zlim=c(0,1),legend.only=T,horizontal = F)
+
+
+
+resultTable<-rbind(resultTable,c(alpha0,mean(apply(data,2,sd)),KLs))
+}
+
+resultTable<-na.exclude(resultTable)
+resultTable<-resultTable[order(resultTable[,2],decreasing = TRUE),]
+save(resultTable,file=paste("./tmpResultTableN",N,"n",n,".RData",sep=""))
+
+rowsToPlot<-1:30
+
+plot(sds,resultTable[min(rowsToPlot),3:dim(resultTable)[2]],type='b',ylim=c(min(resultTable[rowsToPlot,3:dim(resultTable)[2]]),max(resultTable[rowsToPlot,3:dim(resultTable)[2]])))
+for(i in min(rowsToPlot):max(rowsToPlot)){
+  lines(sds,resultTable[i,3:dim(resultTable)[2]],type='b',ylim=c(min(resultTable),max(resultTable)),col=i)
+}
+
+whichMin<-function(vec){
+  return(which(vec == min(vec)))
+}
+
+minIndex<-apply(resultTable[,3:dim(resultTable)[2]],1, whichMin)
+
+plot(resultTable[,2],sds[minIndex])
