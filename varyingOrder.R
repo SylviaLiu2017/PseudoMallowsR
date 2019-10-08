@@ -26,18 +26,20 @@ pseudoDenom<-function(alpha,data,rho,ordering){
 
 ################generate all permutations###################
 source("./allFunctions.R")
-n<-20
+n<-50
+fitvec = 0
+if(n>20){
+  fitvec = estimate_partition_function(alpha_vector = seq(0.01,10,0.2), n_items = 50,metric = "footrule", nmc = 2000,degree=10)
+}
 load("./Cdfootrule.RData")
 #################generate some data###################
-alpha0<-c(1.6)
-alpha0_orderings<-c(10)
-N<-100
+N<-50
 rho0<-1:n
 sourceCpp('MCMC_old.cpp')
 sds<-c(0.1,0.3,0.5,1,3,5,7,9,15,20)
 resultTable<-matrix(data=NA, nrow = 1,ncol = length(sds)+2)
 colnames(resultTable)<-c("alpha data", "sd data", sds)
-for(alpha0 in c(0.5,0.7,1,1.2,1.4,1.5,1.7,2,3,4,5)){
+for(alpha0 in c(1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5)){
   KLs<-vector()
   data<-sample_mallows(rho0 = rho0,alpha0 = alpha0, n_samples = N)
 ###############calculating Mallows posterior probability, ground truth####################
@@ -49,7 +51,6 @@ distance<-"footrule"
 L<-2
 sdAlpha <- 0.5
 lambda <- 1/10
-fitvec<-0
 alphaInit<-1
 pars <- list("nmc"=nmc, "thin"=thin, "alphaJump"=alphaJump, "lambda"=lambda, "L"=L, "sdAlpha"=sdAlpha,
              "dist"=distance, "fit"=fitvec, "Cd"=seq2, aug=FALSE, Rmiss=sample(n), rho0=sample(n), alpha0 = alphaInit)
@@ -122,19 +123,25 @@ resultTable<-rbind(resultTable,c(alpha0,mean(apply(data,2,sd)),KLs))
 
 resultTable<-na.exclude(resultTable)
 resultTable<-resultTable[order(resultTable[,2],decreasing = TRUE),]
-save(resultTable,file=paste("./tmpResultTableN",N,"n",n,".RData",sep=""))
-
-rowsToPlot<-1:30
-
-plot(sds,resultTable[min(rowsToPlot),3:dim(resultTable)[2]],type='b',ylim=c(min(resultTable[rowsToPlot,3:dim(resultTable)[2]]),max(resultTable[rowsToPlot,3:dim(resultTable)[2]])))
-for(i in min(rowsToPlot):max(rowsToPlot)){
-  lines(sds,resultTable[i,3:dim(resultTable)[2]],type='b',ylim=c(min(resultTable),max(resultTable)),col=i)
-}
+save(resultTable,file=paste("./results/tmpResultTableN",N,"n",n,".RData",sep=""))
 
 whichMin<-function(vec){
   return(which(vec == min(vec)))
 }
 
-minIndex<-apply(resultTable[,3:dim(resultTable)[2]],1, whichMin)
+minIndex<-apply(resultTable[,3:dim(resultTable)[2]],1, whichMin) 
+tmp_y<-log(sds[minIndex])
+x<-resultTable[,2]
+df = data.frame(x,tmp_y)
+lmMod=lm(tmp_y~x , data = df)
+summary(lmMod)
 
-plot(resultTable[,2],sds[minIndex])
+
+plot(resultTable[,2],sds[minIndex],ylab = "sd of ordering that resulted in min KL",xlab = "sd dataset", main= paste("log(y) = ", round(lmMod$coefficients[2],2),"x+(",round(lmMod$coefficients[1],2), ")"))
+
+newX = seq(6,11,0.2)
+predY= exp(lmMod$coefficients[1]+lmMod$coefficients[2]*newX)
+
+lines(newX,predY)
+
+
