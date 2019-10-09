@@ -26,7 +26,7 @@ pseudoDenom<-function(alpha,data,rho,ordering){
 
 ################generate all permutations###################
 source("./allFunctions.R")
-n<-50
+n<-15
 fitvec = 0
 if(n>20){
   fitvec = estimate_partition_function(alpha_vector = seq(0.01,10,0.2), n_items = 50,metric = "footrule", nmc = 2000,degree=10)
@@ -39,7 +39,7 @@ sourceCpp('MCMC_old.cpp')
 sds<-c(0.1,0.3,0.5,1,3,5,7,9,15,20)
 resultTable<-matrix(data=NA, nrow = 1,ncol = length(sds)+2)
 colnames(resultTable)<-c("alpha data", "sd data", sds)
-for(alpha0 in c(1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5)){
+for(alpha0 in c(1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5)-0.5){
   KLs<-vector()
   data<-sample_mallows(rho0 = rho0,alpha0 = alpha0, n_samples = N)
 ###############calculating Mallows posterior probability, ground truth####################
@@ -126,7 +126,7 @@ resultTable<-resultTable[order(resultTable[,2],decreasing = TRUE),]
 save(resultTable,file=paste("./results/tmpResultTableN",N,"n",n,".RData",sep=""))
 
 whichMin<-function(vec){
-  return(which(vec == min(vec)))
+  return(which(vec == min(vec))[1])
 }
 
 minIndex<-apply(resultTable[,3:dim(resultTable)[2]],1, whichMin) 
@@ -139,9 +139,14 @@ summary(lmMod)
 
 plot(resultTable[,2],sds[minIndex],ylab = "sd of ordering that resulted in min KL",xlab = "sd dataset", main= paste("log(y) = ", round(lmMod$coefficients[2],2),"x+(",round(lmMod$coefficients[1],2), ")"))
 
-newX = seq(6,11,0.2)
+newX = seq(1,5,0.1)
 predY= exp(lmMod$coefficients[1]+lmMod$coefficients[2]*newX)
 
 lines(newX,predY)
 
+vecD<-vector()
+for(i in 1:20){
+  vecD<-c(vecD, rep(i,10))
+}
 
+sd(vecD)
