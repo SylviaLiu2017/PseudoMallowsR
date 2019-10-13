@@ -23,23 +23,23 @@ pseudoDenom<-function(alpha,data,rho,ordering){
   
   return(logdenom_marginal)
 }
-
 ################generate all permutations###################
 source("./allFunctions.R")
-n<-15
+n<-20
 fitvec = 0
 if(n>20){
   fitvec = estimate_partition_function(alpha_vector = seq(0.01,10,0.2), n_items = 50,metric = "footrule", nmc = 2000,degree=10)
 }
 load("./Cdfootrule.RData")
 #################generate some data###################
-N<-50
+N<-200
 rho0<-1:n
 sourceCpp('MCMC_old.cpp')
-sds<-c(0.1,0.3,0.5,1,3,5,7,9,15,20)
+sds<-c(seq(0,1,0.1)*n/2)
+#sds<-c(seq(0.5,5,0.5))
 resultTable<-matrix(data=NA, nrow = 1,ncol = length(sds)+2)
 colnames(resultTable)<-c("alpha data", "sd data", sds)
-for(alpha0 in c(1.5,2.5,3.5,4.5,5.5,6.5,7.5,8.5)-0.5){
+for(alpha0 in seq(0.5,8,0.5)){
   KLs<-vector()
   data<-sample_mallows(rho0 = rho0,alpha0 = alpha0, n_samples = N)
 ###############calculating Mallows posterior probability, ground truth####################
@@ -65,7 +65,7 @@ tmpRank<-rank(apply(data,2,sum),ties.method='first')
 rhoMat<-matrix(data=NA, nrow = n_samples,ncol = n)
 
 for(sdNorm in sds){
-  print(paste("SD = ",sdNorm))
+  print(paste("alpha = ",alpha0,"SD = ",sdNorm))
   orderings <- vector()
   for(i in 1:n_samples){
     orderings <- rbind(orderings,rank(rnorm(n, mean =generateVOrderings(tmpRank),sd = sdNorm)))
@@ -123,30 +123,15 @@ resultTable<-rbind(resultTable,c(alpha0,mean(apply(data,2,sd)),KLs))
 
 resultTable<-na.exclude(resultTable)
 resultTable<-resultTable[order(resultTable[,2],decreasing = TRUE),]
-save(resultTable,file=paste("./results/tmpResultTableN",N,"n",n,".RData",sep=""))
+save(resultTable,file=paste("./results/ResultTableN",N,"n",n,".RData",sep=""))
+
+plot(resultTable[1,3:12],type='b',ylim=c(min(resultTable),max(resultTable)))
+lines(resultTable[25,3:12],type='b',col=2)
 
 whichMin<-function(vec){
   return(which(vec == min(vec))[1])
 }
 
-minIndex<-apply(resultTable[,3:dim(resultTable)[2]],1, whichMin) 
-tmp_y<-log(sds[minIndex])
-x<-resultTable[,2]
-df = data.frame(x,tmp_y)
-lmMod=lm(tmp_y~x , data = df)
-summary(lmMod)
+apply(resultTable[,3:12],1,whichMin)
 
-
-plot(resultTable[,2],sds[minIndex],ylab = "sd of ordering that resulted in min KL",xlab = "sd dataset", main= paste("log(y) = ", round(lmMod$coefficients[2],2),"x+(",round(lmMod$coefficients[1],2), ")"))
-
-newX = seq(1,5,0.1)
-predY= exp(lmMod$coefficients[1]+lmMod$coefficients[2]*newX)
-
-lines(newX,predY)
-
-vecD<-vector()
-for(i in 1:20){
-  vecD<-c(vecD, rep(i,10))
-}
-
-sd(vecD)
+plot(resultTable[,2],sds[apply(resultTable[,3:12],1,whichMin)])
