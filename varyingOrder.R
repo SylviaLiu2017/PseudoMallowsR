@@ -32,13 +32,14 @@ if(n>20){
 }
 load("./Cdfootrule.RData")
 #################generate some data###################
-N<-200
+N<-500
 rho0<-1:n
 sourceCpp('MCMC_old.cpp')
 sds<-c(seq(0,1,0.1)*n/2)
 #sds<-c(seq(0.5,5,0.5))
 resultTable<-matrix(data=NA, nrow = 1,ncol = length(sds)+2)
 colnames(resultTable)<-c("alpha data", "sd data", sds)
+
 for(alpha0 in seq(0.5,8,0.5)){
   KLs<-vector()
   data<-sample_mallows(rho0 = rho0,alpha0 = alpha0, n_samples = N)
@@ -104,19 +105,6 @@ for(sdNorm in sds){
 }
 
 
-par(mai=c(1,1,0.65,1))
-letters <- c(1:n)
-image(heatMat_ML,col=tim.colors(64*10),zlim=c(0,1),axes=F,cex.lab=2,main = "Mallows")
-par(mai=c(1,1,0.65,1))
-image.plot(heatMat_ML, zlim=c(0,1),legend.only=T,horizontal = F)
-
-par(mai=c(1,1,0.65,1))
-letters <- c(1:n)
-image(heatMat_pseudo,col=tim.colors(64*10),zlim=c(0,1),axes=F,cex.lab=2,main = "Pseudo")
-par(mai=c(1,1,0.65,1))
-image.plot(heatMat_ML, zlim=c(0,1),legend.only=T,horizontal = F)
-
-
 
 resultTable<-rbind(resultTable,c(alpha0,mean(apply(data,2,sd)),KLs))
 }
@@ -125,13 +113,4 @@ resultTable<-na.exclude(resultTable)
 resultTable<-resultTable[order(resultTable[,2],decreasing = TRUE),]
 save(resultTable,file=paste("./results/ResultTableN",N,"n",n,".RData",sep=""))
 
-plot(resultTable[1,3:12],type='b',ylim=c(min(resultTable),max(resultTable)))
-lines(resultTable[25,3:12],type='b',col=2)
 
-whichMin<-function(vec){
-  return(which(vec == min(vec))[1])
-}
-
-apply(resultTable[,3:12],1,whichMin)
-
-plot(resultTable[,2],sds[apply(resultTable[,3:12],1,whichMin)])
