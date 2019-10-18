@@ -25,14 +25,14 @@ pseudoDenom<-function(alpha,data,rho,ordering){
 }
 ################generate all permutations###################
 source("./allFunctions.R")
-n<-20
+n<-25
 fitvec = 0
 if(n>20){
   fitvec = estimate_partition_function(alpha_vector = seq(0.01,10,0.2), n_items = 50,metric = "footrule", nmc = 2000,degree=10)
 }
 load("./Cdfootrule.RData")
 #################generate some data###################
-N<-500
+N<-200
 rho0<-1:n
 sourceCpp('MCMC_old.cpp')
 sds<-c(seq(0,1,0.1)*n/2)
@@ -111,6 +111,6 @@ resultTable<-rbind(resultTable,c(alpha0,mean(apply(data,2,sd)),KLs))
 
 resultTable<-na.exclude(resultTable)
 resultTable<-resultTable[order(resultTable[,2],decreasing = TRUE),]
-save(resultTable,file=paste("./results/ResultTableN",N,"n",n,".RData",sep=""))
+save(resultTable,file=paste("./results/ResultTableN",N,"n",n,"_2.RData",sep=""))
 
 

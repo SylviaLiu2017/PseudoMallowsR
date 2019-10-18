@@ -55,6 +55,7 @@ result3<-resultTable
 load("./results/ResultTableN100n25.RData")
 result4<-resultTable
 
+
 minInd1<-apply(result1[,3:13],1,whichMin)
 minInd2<-apply(result2[,3:13],1,whichMin)
 minInd3<-apply(result3[,3:13],1,whichMin)
@@ -95,4 +96,49 @@ dev.off()
 par(mfrow=c(2,2))
 plot(result2[,2],minInd2,main='10 items',xlab = 'dataset sd', ylab = 'optimal sd')
 plot(result1[,2],minInd1,main='15 items',xlab = 'dataset sd', ylab = 'optimal sd')
+
+###################plotting for large datasets##################
+n<-10
+load(paste("./results/ResultTableN500n",n,".RData",sep=""))
+result1<-resultTable
+sds1<-c(seq(0,1,0.1)*n/2)
+n<-15
+load(paste("./results/ResultTableN500n",n,".RData",sep=""))
+result2<-resultTable
+sds2<-c(seq(0,1,0.1)*n/2)
+n<-20
+load(paste("./results/ResultTableN500n",n,".RData",sep=""))
+result3<-resultTable
+sds3<-c(seq(0,1,0.1)*n/2)
+n<-25
+load(paste("./results/ResultTableN500n",n,".RData",sep=""))
+result4<-resultTable
+sds4<-c(seq(0,1,0.1)*n/2)
+n<-30
+load(paste("./results/ResultTableN500n",n,".RData",sep=""))
+result5<-resultTable
+sds5<-c(seq(0,1,0.1)*n/2)
+n<-50
+load(paste("./results/ResultTableN500n",n,".RData",sep=""))
+result6<-resultTable
+sds6<-c(seq(0,1,0.1)*n/2)
+
+
+minInd1<-apply(result1[,3:13],1,whichMin)
+minInd2<-apply(result2[,3:12],1,whichMin)
+minInd3<-apply(result3[,3:12],1,whichMin)
+minInd4<-apply(result4[,3:12],1,whichMin)
+minInd5<-apply(result5[,3:12],1,whichMin)
+minInd6<-apply(result6[,3:12],1,whichMin)
+
+par(mfrow=c(2,2))
+plot(result1[,2]/10,sds1[minInd1],main='10 items',xlab = 'dataset sd/n', ylab = 'optimal sd')
+plot(result2[,2]/15,sds2[minInd2],main='15 items',xlab = 'dataset sd/n', ylab = 'optimal sd')
+plot(result3[,2]/20,sds3[minInd3],main='20 items',xlab = 'dataset sd/n', ylab = 'optimal sd')
+plot(result4[,2]/25,sds4[minInd4],main='25 items',xlab = 'dataset sd/n', ylab = 'optimal sd')
+
+par(mfrow=c(1,2))
+plot(result5[,2]/30,sds5[minInd5],main='30 items',xlab = 'dataset sd/n', ylab = 'optimal sd')
+plot(result6[,2]/50,sds6[minInd6],main='50 items',xlab = 'dataset sd/n', ylab = 'optimal sd')
+
 
